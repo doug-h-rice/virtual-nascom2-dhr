@@ -13,8 +13,10 @@ CFLAGS=$(OPTIMIZE) $(WARN) $(shell sdl-config --cflags)
 # SDL 2
 srcdir  = .
 CC      = gcc
+#CC		=gcc -std=c99
 EXE	= 
-CFLAGS  = -g -O2 -D_REENTRANT -I/usr/local/include/SDL2 -I/opt/vc/include -I/opt/vc/include/interface/vcos/pthreads -I/opt/vc/include/interface/vmcs_host/linux -DHAVE_OPENGLES -DHAVE_OPENGLES2 -DHAVE_OPENGL -g
+#CFLAGS  = -g -O2 -D_REENTRANT -I/usr/local/include/SDL2  -I/opt/vc/include -I/opt/vc/include/interface/vcos/pthreads -I/opt/vc/include/interface/vmcs_host/linux -DHAVE_OPENGLES -DHAVE_OPENGLES2 -DHAVE_OPENGL -g
+CFLAGS  = -g -O2 -D_REENTRANT -I/usr/local/include/SDL2 -I/usr/include/SDL2 -I/opt/vc/include -I/opt/vc/include/interface/vcos/pthreads -I/opt/vc/include/interface/vmcs_host/linux -DHAVE_OPENGLES -DHAVE_OPENGLES2 -DHAVE_OPENGL -g
 LIBS	=  -lSDL2_test -L/usr/local/lib -Wl,-rpath,/usr/local/lib -Wl,--enable-new-dtags -lSDL2
 
 virtual-nascom-sdl2: virtual-nascom-sdl2.o font.o simz80.o ihex.o

@@ -122,6 +122,8 @@ clean:
 #define FAST_DELAY 900000
 
 static bool go_fast = false;
+static bool serial_print = false;
+
 static int t_sim_delay = SLOW_DELAY;
 
 
@@ -136,7 +138,7 @@ static int t_sim_delay = SLOW_DELAY;
 #define DISPLAY_HEIGHT  272
 #else
 #define DISPLAY_WIDTH   480
-#define DISPLAY_HEIGHT  240
+#define DISPLAY_HEIGHT  256
 #define DISPLAY_X_OFFSET 0
 #define DISPLAY_Y_OFFSET 0
 #endif
@@ -151,12 +153,11 @@ static struct font {
 
 
 /* for SDL2 */
+#ifdef SDL1
+#else
 SDL_Window 	 * window;
 SDL_Renderer * renderer;
-
-
-
-
+#endif
 
 static FILE *serial_out, *serial_in;
 static int tape_led = 0;
@@ -217,23 +218,24 @@ kbd_spec_w_shctrl [] = ___ ___ ___    ___ "}" "|" "~" "\177" ___ ___ ___  ___ __
 typedef enum { CONT = 0, RESET = 1, DONE = -1 } sim_action_t;
 static sim_action_t action = CONT;
 
+#ifdef SDL1
 // Ctr-Shift-Meta 0 -> the REAL # (instead of the pound symbol)
 // Ctrl-Space -> `
-/*
 static void handle_key_event_dwim(SDL_keysym keysym, bool keydown);
 static void handle_key_event_raw(SDL_keysym keysym, bool keydown);
-
 static void (*handle_key_event)(SDL_keysym, bool) = handle_key_event_raw;
-
-static void handle_app_control(SDL_keysym keysym, bool keydown)
-*/
-
+#else
 static void handle_key_event_dwim(SDL_Keysym keysym, bool keydown);
 static void handle_key_event_raw(SDL_Keysym keysym, bool keydown);
-
 static void (*handle_key_event)(SDL_Keysym, bool) = handle_key_event_raw;
+#endif
 
+
+#ifdef SDL1
+static void handle_app_control(SDL_keysym keysym, bool keydown)
+#else
 static void handle_app_control(SDL_Keysym keysym, bool keydown)
+#endif
 {
     if (keydown)
         switch (keysym.sym) {
@@ -256,12 +258,31 @@ static void handle_app_control(SDL_Keysym keysym, bool keydown)
 
             t_sim_delay = go_fast ? FAST_DELAY : SLOW_DELAY;
             break;
+            
+
+        case SDLK_F6:
+			/* rewind tape */
+            serial_input_available = ( 0 == 1 );
+            if (serial_in){
+			  fseek( serial_in , 0l,SEEK_SET);
+              serial_input_available = !feof(serial_in);
+		    };
+
+            serial_print = 1 - serial_print;
+            if (  serial_print ){
+				printf( "print UART\n"); 
+			} else {
+				printf( "do not print UART\n");
+			}
+            break;
+            
 
         case SDLK_F9:
             action = RESET;
             break;
 
         case SDLK_F10:
+			/* pressing this is causing "Segmentation fault" */ 
             if (handle_key_event == handle_key_event_raw)
                 handle_key_event = handle_key_event_dwim;
             else
@@ -276,9 +297,11 @@ static void handle_app_control(SDL_Keysym keysym, bool keydown)
         }
 }
 
-//static void handle_key_event_dwim(SDL_keysym keysym, bool keydown)
-
+#ifdef SDL1
+static void handle_key_event_dwim(SDL_keysym keysym, bool keydown)
+#else
 static void handle_key_event_dwim(SDL_Keysym keysym, bool keydown)
+#endif
 {
     int i = -1, bit = 0;
     static bool ui_shift = false;
@@ -302,10 +325,12 @@ static void handle_key_event_dwim(SDL_Keysym keysym, bool keydown)
     case SDLK_RCTRL:
         ui_ctrl = keydown;
         return;
-
+#ifdef SDL1
 /* comment out for SDL2 */
-//    case SDLK_RMETA:
-//    case SDLK_LMETA:
+    case SDLK_RMETA:
+    case SDLK_LMETA:
+#else
+#endif
     case SDLK_RALT:
     case SDLK_LALT:
         ui_graph = keydown;
@@ -471,9 +496,12 @@ static void handle_key_event_raw(SDL_Keysym keysym, bool keydown)
         case SDLK_LEFT:    i = 2, bit = 6; break;
         case SDLK_DOWN:    i = 3, bit = 6; break;
         case SDLK_RIGHT:   i = 4, bit = 6; break;
+#ifdef SDL1
 /* comment out for SDL2 */
- //       case SDLK_LMETA:
- //       case SDLK_RMETA:
+        case SDLK_LMETA:
+        case SDLK_RMETA:
+#else
+#endif
         case SDLK_LALT:
         case SDLK_RALT:    i = 5, bit = 6; break;
 
@@ -614,7 +642,7 @@ int load_both_formats(char *file) {
    /*0F58 00 00 00 00 00 00 00 00 00*/
     hex_read = fscanf(stream, "%x %x %x %x %x %x %x %x %x %x%c%c\n",
 	     &a , &b1, &b2, &b3, &b4, &b5, &b6, &b7, &b8, &b9, &c10, &c11 );
-	       
+	printf( " %d ", hex_read );       
 	if ( hex_read == 12 ) {
 	  printf("\n%d  [%04x]   %02x %02x %02x %02x  %02x %02x %02x %02x  %02x {%d %d}",	
 	     hex_read,         a,    b1,  b2, b3,    b4,   b5,  b6,  b7,  b8,   b9, (int)c10, (int)c11 );
@@ -703,8 +731,22 @@ static void ui_serve_input(void)
 
 static void ui_display_refresh(void)
 {
+
+    auto SDL_Rect dest = { 5, DISPLAY_HEIGHT-16 , 16,16 };
+    auto SDL_Rect clipOn  = { 0,  0 , 16, 16 };
+    auto SDL_Rect clipOff = { 16, 0 , 16, 16 };
+
+	int count;
+	size_t tape_pos;
+	size_t tape_end;
+
+
+	char strBuffer [ 100 ];
+
     static uint8_t screencache[1024] = { 0 };
     bool dirty = false;
+
+
 
     for (uint8_t *p0 = ram + 0x80A, *q0 = screencache + 0xA;
          p0 < ram + 0xC00; p0 += 64, q0 += 64)
@@ -719,17 +761,36 @@ static void ui_display_refresh(void)
                 RenderItem(&nascom_font, *p, x * FONT_W, y * FONT_H);
                 dirty = true;
             }
+   
+    if ( serial_in ) {
+	  tape_pos = 	ftell(serial_in);
+	} else {
+	  tape_pos = 0l;	
+	} 
+	
+    if ( serial_out ) {
+	  tape_end = 	ftell( serial_out );
+	} else {
+	  tape_end = 0l;	
+	} 
+	
+    
+    sprintf( strBuffer,"tape: %c %06ld:%06ld ", " *"[tape_led] , tape_pos, tape_end ); 
+	for ( count = 0; count < strlen( strBuffer ); count++  ){
+      RenderItem(&nascom_font, (int) strBuffer[count] , 3+count * FONT_W, 16 * FONT_H);		
+	}
 
     if (dirty)
-        // SDL_UpdateRect(screen, 0, 0, screen->w, screen->h);
-//        SDL_Flip(screen); // either seem to work
+#ifdef SDL1
+      SDL_UpdateRect(screen, 0, 0, screen->w, screen->h);
+      SDL_Flip(screen); // either seem to work
 
-
-
+#else    
 //	  renderer  = SDL_CreateSoftwareRenderer( screen  );
-//	  SDL_RenderPresent( renderer );    
-      SDL_UpdateWindowSurface(window);
+//	  SDL_RenderPresent( renderer );
 
+      SDL_UpdateWindowSurface(window);
+#endif
 
 
 }
@@ -763,6 +824,9 @@ int main(int argc, char **argv)
     int c;
 
     serial_out = fopen("serialout.txt", "a+");
+    if (serial_out){
+	  fseek( serial_out , 0l,SEEK_END);
+	};
 
     if (!serial_out)
         exit(3);
@@ -813,6 +877,7 @@ int main(int argc, char **argv)
          "* END - leaves a screendump in `screendump`\n"
          "* F4 - exits the emulator\n"
          "* F5 - toggles between stupidly fast and \"normal\" speed\n"
+         "* F6 - rewind input file, toggle UART debug\n"
          "* F9 - resets the emulated Nascom\n"
          "* F10 - toggles between \"raw\" and \"natural\" keyboard emulation\n"
          "\n"
@@ -915,6 +980,11 @@ void out(unsigned int port, unsigned char value)
         break;
 
     case 1:
+		if ( serial_print ){
+		  printf(" %02x",(uint) value);	
+		}
+
+
         fputc(value, serial_out);
         break;
 
@@ -934,8 +1004,13 @@ int in(unsigned int port)
         /* printf("[%d]", keyboard.index); */
         return ~keyboard.mask[keyboard.index];
     case 1:
+    
         if (serial_input_available & tape_led) {
             char ch = fgetc(serial_in);
+			if ( serial_print ){
+		      printf(" %02x",(uint) ch);	
+			}
+
             serial_input_available = !feof(serial_in);
             return ch;
         }
@@ -959,7 +1034,7 @@ static int mysetup(int argc, char **argv)
     atexit(SDL_Quit);
 
 
-#if SDL1
+#ifdef SDL1
     if (SDL_Init(SDL_INIT_VIDEO) < 0) {
         fprintf(stderr, "Unable to init SDL: %s\n", SDL_GetError());
         return 1;
@@ -1017,13 +1092,16 @@ static int mysetup(int argc, char **argv)
 #endif
 
 
+#ifdef SDL1
+#else
 	/* invert font - Cannot find SDL function */
-//    for ( count =0 ; count < sizeof( nascom_font_raw ); count ++ ){
+	//    for ( count =0 ; count < sizeof( nascom_font_raw ); count ++ ){
+
     for ( count =0 ; count < 256*16 ; count ++ ){
 
 		nascom_font_raw[ count ] = ~nascom_font_raw[ count ];
 	}
-
+#endif
 
     /* Load font - the font is a 1 bit map and for SDL2 the masks do not work */
     nascom_font.surf =
@@ -1045,19 +1123,28 @@ static int mysetup(int argc, char **argv)
         perror("Couldn't load the font\n");
         return 1;
     }
-
+#ifdef SDL1
  //   nascom_font.surf = SDL_DisplayFormat(nascom_font.surf);
 //    nascom_font.surf   = SDL_ConvertSurfaceFormat( nascom_font.surf,SDL_PIXELFORMAT_INDEX1MSB,0 );
+#else
     nascom_font.surf   = SDL_ConvertSurfaceFormat( nascom_font.surf,SDL_PIXELFORMAT_ABGR8888,0 );
     /* Choose the font colour  */
 	SDL_SetSurfaceColorMod(nascom_font.surf, 200, 200 , 0 );
-	
+#endif	
 	
     if (!nascom_font.surf) {
         perror("Couldn't load the font\n");
         return 1;
     }
 	printf("end of mysetup(\n");
+
+/* try out loading .BMP file */
+/*	
+	tape = SDL_LoadBMP( "tape3.bmp" );
+    tape   = SDL_ConvertSurfaceFormat( tape, SDL_PIXELFORMAT_ABGR8888,0 );
+	SDL_SetSurfaceColorMod(tape, 200, 200 , 0 );
+*/	
+	
 
     return 0;
 }
