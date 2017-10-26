@@ -237,6 +237,8 @@ static void handle_app_control(SDL_keysym keysym, bool keydown)
 static void handle_app_control(SDL_Keysym keysym, bool keydown)
 #endif
 {
+	/* force CONT out of RESET */	
+	action = CONT;
     if (keydown)
         switch (keysym.sym) {
         case SDLK_END: {
