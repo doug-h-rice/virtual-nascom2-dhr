@@ -1,3 +1,18 @@
+Doug Rice's changes in 2017
+========================================
+I first used the x11 version, but upgrades to UBUNTU broke this.
+I installed SDL1.2 and got this to work on the raspberry Pi
+This runs on UBUNTU 14 and Raspberry Pi 
+Raspbarian stretch broke this so I got it to work with SDL2
+I added a tape recorder. When this was working, Tommy posted updates which added similar functionality.
+I added rewind.
+
+My updates have been to do with the tape, and loading .nas and .ihx format files.
+
+I got the BLS pascal to work and you can save and reload to tape.
+
+Tommy's README.md
+
 Virtual Nascom, Version 1.10, 2017-05-10
 ========================================
 
