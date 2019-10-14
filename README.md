@@ -1,15 +1,28 @@
-Doug Rice's changes in 2017
+Doug Rice's changes in 2017 and 2019
 ========================================
 I first used the x11 version, but upgrades to UBUNTU broke this.
+
 I installed SDL1.2 and got this to work on the raspberry Pi
 This runs on UBUNTU 14 and Raspberry Pi 
+
+The PC version of RPi seems to use SDL1.2
+
 Raspbarian stretch broke this so I got it to work with SDL2
-I added a tape recorder. When this was working, Tommy posted updates which added similar functionality.
+
+I use #define SDL1 and #ifdef SDL1 to select between SDL1.2 and SDL2
+
+I added a tape recorder. 
+
+When this was working, Tommy independently posted similar updates which added similar functionality.
+
 I added rewind.
+
+This allows W, R and V.
 
 My updates have been to do with the tape, and loading .nas and .ihx format files.
 
 I got the BLS pascal to work and you can save and reload to tape.
+
 
 Tommy's README.md
 
