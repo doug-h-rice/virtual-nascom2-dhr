@@ -1,0 +1,37 @@
+ # Makefile for Virtual Nascom for SDL1 on PC version of Raspberry Pi
+
+# CC must be an C99 compiler
+CC=gcc -std=c99
+
+# full speed or debugging to taste
+OPTIMIZE=-O2
+#OPTIMIZE=-g
+#WARN=-Wmost -Werror
+WARN=-Wall -Wno-parentheses
+CFLAGS=$(OPTIMIZE) $(WARN) $(shell sdl-config --cflags)
+
+# SDL 1
+srcdir  = .
+CC      = gcc 
+#CC		=gcc -std=c99
+EXE	= 
+
+# add -DSDL1 and include paths
+#CFLAGS  = -g -O2 -D_REENTRANT -I/usr/local/include/SDL2  -I/opt/vc/include -I/opt/vc/include/interface/vcos/pthreads -I/opt/vc/include/interface/vmcs_host/linux -DHAVE_OPENGLES -DHAVE_OPENGLES2 -DHAVE_OPENGL -g
+CFLAGS  = -g -O2 -D_REENTRANT -DSDL1 -I/usr/local/include/SDL -I/usr/local/include/SDL2 -I/usr/include/SDL2 -I/opt/vc/include -I/opt/vc/include/interface/vcos/pthreads -I/opt/vc/include/interface/vmcs_host/linux -DHAVE_OPENGLES -DHAVE_OPENGLES2 -DHAVE_OPENGL -g
+
+
+#LIBS	=  -lSDL2_test -L/usr/local/lib -Wl,-rpath,/usr/local/lib -Wl,--enable-new-dtags -lSDL2
+LIBS	=  -lSDL_test - L/usr/local/lib -Wl,-rpath,/usr/local/lib -Wl,--enable-new-dtags -lSDL
+
+
+vm1: virtual-nascom-sdl2.o font.o simz80.o ihex.o
+	$(CC)  $(CWARN)  $^ -o $@ -lSDL
+
+
+virtual-nascom-sdl2: virtual-nascom-sdl2.o font.o simz80.o ihex.o
+	$(CC) $(CWARN)  $^ -o $@ -lSDL
+	
+
+clean:
+	rm -f *.o *~ core

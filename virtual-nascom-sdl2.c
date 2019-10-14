@@ -39,7 +39,17 @@
 */
 /*
  * 
- * This version has been modified to use SDL2.
+ * This version has been modified to use SDL.
+ * 
+ * I got it to work for SDL1.2 and SDL2
+ * 
+ * My Raspberry Pi PC verion used SDL1.2 and RPi stretch uses SDL2
+ * 
+ * I used #ifdef SDL1 to select 
+ * 
+ * #define SDL1 
+ * 
+ * 
  * See:-
  * https://wiki.libsdl.org/FrontPage
  * https://wiki.libsdl.org/Introduction
@@ -84,8 +94,57 @@
 	
  * 
  * 
-# Makefile for Virtual Nascom:-
+# Make files
+* makefile - rename one of the others.
 * 
+* makefile-sdl - for SDL on PC RPi
+* makefile-sdl1 - for original virtual nascom
+* 
+##########################################################
+# Makefile for Virtual Nascom for SDL1 on PC version of Raspberry Pi
+
+# CC must be an C99 compiler
+CC=gcc -std=c99
+
+# full speed or debugging to taste
+OPTIMIZE=-O2
+#OPTIMIZE=-g
+#WARN=-Wmost -Werror
+WARN=-Wall -Wno-parentheses
+CFLAGS=$(OPTIMIZE) $(WARN) $(shell sdl-config --cflags)
+
+# SDL 1
+srcdir  = .
+CC      = gcc 
+#CC		=gcc -std=c99
+EXE	= 
+
+# add -DSDL1 and include paths
+#CFLAGS  = -g -O2 -D_REENTRANT -I/usr/local/include/SDL2  -I/opt/vc/include -I/opt/vc/include/interface/vcos/pthreads -I/opt/vc/include/interface/vmcs_host/linux -DHAVE_OPENGLES -DHAVE_OPENGLES2 -DHAVE_OPENGL -g
+CFLAGS  = -g -O2 -D_REENTRANT -DSDL1 -I/usr/local/include/SDL -I/usr/local/include/SDL2 -I/usr/include/SDL2 -I/opt/vc/include -I/opt/vc/include/interface/vcos/pthreads -I/opt/vc/include/interface/vmcs_host/linux -DHAVE_OPENGLES -DHAVE_OPENGLES2 -DHAVE_OPENGL -g
+
+
+#LIBS	=  -lSDL2_test -L/usr/local/lib -Wl,-rpath,/usr/local/lib -Wl,--enable-new-dtags -lSDL2
+LIBS	=  -lSDL_test - L/usr/local/lib -Wl,-rpath,/usr/local/lib -Wl,--enable-new-dtags -lSDL
+
+
+vm1: virtual-nascom-sdl2.o font.o simz80.o ihex.o
+	$(CC)  $(CWARN)  $^ -o $@ -lSDL
+
+
+virtual-nascom-sdl2: virtual-nascom-sdl2.o font.o simz80.o ihex.o
+	$(CC) $(CWARN)  $^ -o $@ -lSDL
+	
+
+clean:
+	rm -f *.o *~ core
+* 
+* 
+* 
+*  
+##########################################################
+# Makefile for Virtual Nascom using SDL2:-
+ 
 # CC must be an C99 compiler
 CC=gcc -std=c99
 # full speed or debugging to taste
@@ -115,7 +174,7 @@ clean:
 #include "simz80.h"
 #include "nascom.h"
 #include "ihex.h"
-#include <SDL.h>
+#include <SDL/SDL.h>
 
 
 #define SLOW_DELAY  25000
@@ -154,6 +213,7 @@ static struct font {
 
 /* for SDL2 */
 #ifdef SDL1
+
 #else
 SDL_Window 	 * window;
 SDL_Renderer * renderer;
@@ -332,6 +392,7 @@ static void handle_key_event_dwim(SDL_Keysym keysym, bool keydown)
     case SDLK_RMETA:
     case SDLK_LMETA:
 #else
+
 #endif
     case SDLK_RALT:
     case SDLK_LALT:
@@ -465,8 +526,12 @@ translate:
     }
 }
 
-//static void handle_key_event_raw(SDL_keysym keysym, bool keydown)
+#ifdef SDL1
+
+static void handle_key_event_raw(SDL_keysym keysym, bool keydown)
+#else
 static void handle_key_event_raw(SDL_Keysym keysym, bool keydown)
+#endif
 {
     int i = -1, bit = 0;
 
@@ -685,6 +750,7 @@ int load_both_formats(char *file) {
 
 
 
+
 static void save_nascom(int start, int end, const char *name)
 {
     FILE *f = fopen(name, "w+");
@@ -700,6 +766,13 @@ static void save_nascom(int start, int end, const char *name)
 
     fclose(f);
 }
+
+
+
+
+
+
+
 
 static void ui_serve_input(void)
 {
@@ -888,6 +961,11 @@ int main(int argc, char **argv)
 
     load_nascom(monitor);
     load_nascom("basic.nal");
+ 
+    //load_nascom("Nassys1.nas");
+    //load_nascom("Nasbugt2.nas");
+    //load_nascom("Nasbugt4.nas");
+
 
     for (; optind < argc; optind++){
         //load_nascom(argv[optind]);
@@ -1076,7 +1154,9 @@ static int mysetup(int argc, char **argv)
 
 #endif
 
-#if 0
+#if 0 
+//
+
     /* Populate the palette */
     SDL_Color colors[256];
 
@@ -1126,8 +1206,9 @@ static int mysetup(int argc, char **argv)
         return 1;
     }
 #ifdef SDL1
- //   nascom_font.surf = SDL_DisplayFormat(nascom_font.surf);
-//    nascom_font.surf   = SDL_ConvertSurfaceFormat( nascom_font.surf,SDL_PIXELFORMAT_INDEX1MSB,0 );
+    // nascom_font.surf = SDL_DisplayFormat(nascom_font.surf);
+    // nascom_font.surf = SDL_ConvertSurfaceFormat( nascom_font.surf,SDL_PIXELFORMAT_INDEX1MSB,0 );
+
 #else
     nascom_font.surf   = SDL_ConvertSurfaceFormat( nascom_font.surf,SDL_PIXELFORMAT_ABGR8888,0 );
     /* Choose the font colour  */
