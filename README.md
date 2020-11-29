@@ -22,7 +22,7 @@ It always appends to the end of the tape serialout.bin.
 
 F6 rewinds so you can use V or R without restarting the program.
 
-Use  <shift><enter> a few times get back control.
+Use  shift-enter a few times get back control if you R or V at the end of the tape.
 
 When this was working, Tommy independently posted similar updates which added similar functionality.
 
