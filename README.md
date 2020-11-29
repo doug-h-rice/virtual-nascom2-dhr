@@ -1,5 +1,5 @@
-Doug Rice's changes in 2017 and 2019
-========================================
+Doug Rice's changes in 2017 and 2019 and 2020
+=============================================
 I first used the x11 version, but upgrades to UBUNTU broke this.
 
 I installed SDL1.2 and got this to work on the raspberry Pi
