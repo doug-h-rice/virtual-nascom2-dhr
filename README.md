@@ -3,26 +3,41 @@ Doug Rice's changes in 2017 and 2019
 I first used the x11 version, but upgrades to UBUNTU broke this.
 
 I installed SDL1.2 and got this to work on the raspberry Pi
-This runs on UBUNTU 14 and Raspberry Pi 
+
+This runs on UBUNTU 14 and Raspberry Pi
 
 The PC version of RPi seems to use SDL1.2
 
 Raspbarian stretch broke this so I got it to work with SDL2
 
+I tried BUSTER and SDL2 and it now scales 1:2 so is easier to read.
+
 I use #define SDL1 and #ifdef SDL1 to select between SDL1.2 and SDL2
 
-I added a tape recorder. 
+I added a tape recorder.
+
+This allows W, R and V commands
+
+It always appends to the end of the tape serialout.bin. 
+
+F6 rewinds so you can use V or R without restarting the program.
+
+Use  <shift><enter> a few times get back control.
 
 When this was working, Tommy independently posted similar updates which added similar functionality.
-
-I added rewind.
-
-This allows W, R and V.
 
 My updates have been to do with the tape, and loading .nas and .ihx format files.
 
 I got the BLS pascal to work and you can save and reload to tape.
 
+I changed serialout.txt to serialout.bin !
+
+usage:
+./virtual-nascom-sdl2 -i serialout.bin test.ihx
+
+E1000 runs test.ihx
+
+I like BLS Pascal so it tries to load it from same directory.
 
 Tommy's README.md
 
