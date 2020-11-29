@@ -174,7 +174,11 @@ clean:
 #include "simz80.h"
 #include "nascom.h"
 #include "ihex.h"
-#include <SDL/SDL.h>
+
+/* this needed a bit of attention after installing SDL2 on Raspberry Pi Buster */
+//#include <SDL/SDL.h>
+#include "SDL/include/SDL.h"
+
 
 
 #define SLOW_DELAY  25000
@@ -185,6 +189,8 @@ static bool serial_print = false;
 
 static int t_sim_delay = SLOW_DELAY;
 
+/* set scale to 1 for 1:1,  2 for 1:2 , and 4 for 1:4 which fills HD screen*/
+#define SCALE   2
 
 #define FONT_H_PITCH 16
 #define FONT_H       15
@@ -196,8 +202,8 @@ static int t_sim_delay = SLOW_DELAY;
 #define DISPLAY_WIDTH   480
 #define DISPLAY_HEIGHT  272
 #else
-#define DISPLAY_WIDTH   480
-#define DISPLAY_HEIGHT  256
+#define DISPLAY_WIDTH   480*SCALE
+#define DISPLAY_HEIGHT  256*SCALE
 #define DISPLAY_X_OFFSET 0
 #define DISPLAY_Y_OFFSET 0
 #endif
@@ -223,12 +229,30 @@ static FILE *serial_out, *serial_in;
 static int tape_led = 0;
 static int serial_input_available = 0;
 
+/*
 static void RenderItem(struct font *font, int idx, int x, int y)
 {
     auto SDL_Rect dest = { DISPLAY_X_OFFSET + x, DISPLAY_Y_OFFSET + y,
                            font->w, font->h };
     SDL_Rect clip = { 0, idx * font->h_pitch, font->w, font->h };
     SDL_BlitSurface(font->surf, &clip, screen, &dest);
+}
+*/
+static void RenderItem(struct font *font, int idx, int x, int y)
+{
+    auto SDL_Rect dest = { DISPLAY_X_OFFSET + x*SCALE, DISPLAY_Y_OFFSET + y*SCALE,
+                           font->w*SCALE, font->h*SCALE };
+    SDL_Rect clip = { 0, idx * font->h_pitch, font->w, font->h };
+    // SDL_BlitSurface(font->surf, &clip, screen, &dest);
+
+    SDL_BlitScaled( font->surf, &clip, screen, &dest);
+    
+/*    
+    int SDL_BlitScaled(SDL_Surface*    src,
+                   const SDL_Rect* srcrect,
+                   SDL_Surface*    dst,
+                   SDL_Rect*       dstrect)
+*/
 }
 
 /* The keyboard holds the state state of every depressed key and a
@@ -768,12 +792,6 @@ static void save_nascom(int start, int end, const char *name)
 }
 
 
-
-
-
-
-
-
 static void ui_serve_input(void)
 {
     SDL_Event event;
@@ -898,7 +916,7 @@ int main(int argc, char **argv)
 {
     int c;
 
-    serial_out = fopen("serialout.txt", "a+");
+    serial_out = fopen("serialout.bin", "a+");
     if (serial_out){
 	  fseek( serial_out , 0l,SEEK_END);
 	};
@@ -956,8 +974,13 @@ int main(int argc, char **argv)
          "* F9 - resets the emulated Nascom\n"
          "* F10 - toggles between \"raw\" and \"natural\" keyboard emulation\n"
          "\n"
-         "All serial output is appended to `serialout.txt` which may be fed back\n"
-         "in on a subsequent launch via the `-i` option.\n");
+         "All serial output is appended to `serialout.bin` in binary which may be fed back\n"
+         "in on a subsequent launch via the `-i` option.\n"
+         "./virtual-nascom-sdl2 -i serialout.bin test.ihx \n"
+         "E1000 starts test.ihx and a lot of other examples.\n"
+                  
+         );
+
 
     load_nascom(monitor);
     load_nascom("basic.nal");
@@ -966,6 +989,8 @@ int main(int argc, char **argv)
     //load_nascom("Nasbugt2.nas");
     //load_nascom("Nasbugt4.nas");
 
+    /* I like BLS pascal so preload it, if found */
+    load_both_formats("BLS-Pascal-1.2.nas");
 
     for (; optind < argc; optind++){
         //load_nascom(argv[optind]);
