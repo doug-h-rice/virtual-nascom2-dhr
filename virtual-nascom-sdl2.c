@@ -1,5 +1,7 @@
 /*   Virtual Nascom, a Nascom II emulator.
 
+     Copyright (C) 2020  Doug Rice
+     
      Copyright (C) 2000,2009,2017  Tommy Thorn
 
      Z80 emulator portition Copyright (C) 1995,1998 Frank D. Cringle.
@@ -38,17 +40,16 @@
   started.
 */
 /*
- * 
  * This version has been modified to use SDL.
  * 
  * I got it to work for SDL1.2 and SDL2
  * 
- * My Raspberry Pi PC verion used SDL1.2 and RPi stretch uses SDL2
+ * My Raspberry Pi Weezy PC verion used SDL1.2 
+ * and RPi stretch uses SDL2
  * 
  * I used #ifdef SDL1 to select 
  * 
  * #define SDL1 
- * 
  * 
  * See:-
  * https://wiki.libsdl.org/FrontPage
@@ -74,7 +75,6 @@
 //	invert font - Cannot find SDL function 
 //    for ( count =0 ; count < sizeof( nascom_font_raw ); count ++ ){
     for ( count =0 ; count < 256*16 ; count ++ ){
-
 		nascom_font_raw[ count ] = ~nascom_font_raw[ count ];
 	}
 
@@ -189,8 +189,16 @@ static bool serial_print = false;
 
 static int t_sim_delay = SLOW_DELAY;
 
+
+/* for SDL2 */
+#ifdef SDL1
+/* I cannot work out how to scale using SDL1 */
+#define SCALE   1
+#else
 /* set scale to 1 for 1:1,  2 for 1:2 , and 4 for 1:4 which fills HD screen*/
 #define SCALE   2
+#endif
+
 
 #define FONT_H_PITCH 16
 #define FONT_H       15
@@ -202,7 +210,7 @@ static int t_sim_delay = SLOW_DELAY;
 #define DISPLAY_WIDTH   480
 #define DISPLAY_HEIGHT  272
 #else
-#define DISPLAY_WIDTH   480*SCALE
+#define DISPLAY_WIDTH   384*SCALE
 #define DISPLAY_HEIGHT  256*SCALE
 #define DISPLAY_X_OFFSET 0
 #define DISPLAY_Y_OFFSET 0
@@ -229,30 +237,17 @@ static FILE *serial_out, *serial_in;
 static int tape_led = 0;
 static int serial_input_available = 0;
 
-/*
-static void RenderItem(struct font *font, int idx, int x, int y)
-{
-    auto SDL_Rect dest = { DISPLAY_X_OFFSET + x, DISPLAY_Y_OFFSET + y,
-                           font->w, font->h };
-    SDL_Rect clip = { 0, idx * font->h_pitch, font->w, font->h };
-    SDL_BlitSurface(font->surf, &clip, screen, &dest);
-}
-*/
 static void RenderItem(struct font *font, int idx, int x, int y)
 {
     auto SDL_Rect dest = { DISPLAY_X_OFFSET + x*SCALE, DISPLAY_Y_OFFSET + y*SCALE,
                            font->w*SCALE, font->h*SCALE };
     SDL_Rect clip = { 0, idx * font->h_pitch, font->w, font->h };
-    // SDL_BlitSurface(font->surf, &clip, screen, &dest);
 
+#ifdef SDL1
+    SDL_BlitSurface(font->surf, &clip, screen, &dest);
+#else
     SDL_BlitScaled( font->surf, &clip, screen, &dest);
-    
-/*    
-    int SDL_BlitScaled(SDL_Surface*    src,
-                   const SDL_Rect* srcrect,
-                   SDL_Surface*    dst,
-                   SDL_Rect*       dstrect)
-*/
+#endif    
 }
 
 /* The keyboard holds the state state of every depressed key and a
@@ -717,7 +712,7 @@ int load_both_formats(char *file) {
      hex_read = fscanf(stream,":%2x%4x%2x",&hex_len,&hex_addr,&hex_cmd);
 
      if ( hex_read ){
-       printf( "\n%x  %2d, %2X, %x  : ", hex_read, hex_len, hex_addr, hex_cmd );
+       // printf( "\n%x  %2d, %2X, %x  : ", hex_read, hex_len, hex_addr, hex_cmd );
        for( hex_count= 0 ; hex_count < hex_len ; hex_count++ ){
          /* limit address */ 
 		 hex_addr = hex_addr & 0xFFFF;
@@ -733,10 +728,11 @@ int load_both_formats(char *file) {
    /*0F58 00 00 00 00 00 00 00 00 00*/
     hex_read = fscanf(stream, "%x %x %x %x %x %x %x %x %x %x%c%c\n",
 	     &a , &b1, &b2, &b3, &b4, &b5, &b6, &b7, &b8, &b9, &c10, &c11 );
-	printf( " %d ", hex_read );       
+	// printf( " %d ", hex_read );       
 	if ( hex_read == 12 ) {
-	  printf("\n%d  [%04x]   %02x %02x %02x %02x  %02x %02x %02x %02x  %02x {%d %d}",	
-	     hex_read,         a,    b1,  b2, b3,    b4,   b5,  b6,  b7,  b8,   b9, (int)c10, (int)c11 );
+	  // printf("\n%d  [%04x]   %02x %02x %02x %02x  %02x %02x %02x %02x  %02x {%d %d}",	
+	  //   hex_read,         a,    b1,  b2, b3,    b4,   b5,  b6,  b7,  b8,   b9, (int)c10, (int)c11 );
+
 //	  if ( a > 0 ){ 
 	  if ( c10 == c11 ){ 
 		a = ( a & 0xFFFF );   
@@ -833,13 +829,10 @@ static void ui_display_refresh(void)
 	size_t tape_pos;
 	size_t tape_end;
 
-
 	char strBuffer [ 100 ];
 
     static uint8_t screencache[1024] = { 0 };
     bool dirty = false;
-
-
 
     for (uint8_t *p0 = ram + 0x80A, *q0 = screencache + 0xA;
          p0 < ram + 0xC00; p0 += 64, q0 += 64)
@@ -866,8 +859,7 @@ static void ui_display_refresh(void)
 	} else {
 	  tape_end = 0l;	
 	} 
-	
-    
+	    
     sprintf( strBuffer,"tape: %c %06ld:%06ld ", " *"[tape_led] , tape_pos, tape_end ); 
 	for ( count = 0; count < strlen( strBuffer ); count++  ){
       RenderItem(&nascom_font, (int) strBuffer[count] , 3+count * FONT_W, 16 * FONT_H);		
@@ -903,9 +895,11 @@ usage(void)
 {
     fprintf(stderr,
  "This is Virtual Nascom.  Usage: %s {flags} files\n"
- "           -i <file>       take serial port input from file (if tape led is on)\n"
+ "           -i <file> take serial port input from file (if tape led is on)\n"
  "           -m <file>       use <file> as monitor (default is nassys3.nal)\n"
  "           -v              be verbose\n"
+ " appends serial output to serialout.bin \n"
+ " inputs from  serialout.bin or file specfied by -i \n"
             ,progname);
     exit (1);
 }
@@ -915,8 +909,12 @@ static int mysetup(int argc, char **argv);
 int main(int argc, char **argv)
 {
     int c;
-
-    serial_out = fopen("serialout.bin", "a+");
+    char * filename;
+    filename = "serialout.bin";
+    
+    /* append, ( and create) */
+    
+    serial_out = fopen(filename, "a");
     if (serial_out){
 	  fseek( serial_out , 0l,SEEK_END);
 	};
@@ -938,11 +936,7 @@ int main(int argc, char **argv)
     while ((c = getopt(argc, argv, "i:m:v")) != EOF)
         switch (c) {
         case 'i':
-            serial_in = fopen(optarg, "r");
-            if (!serial_in)
-                perror(optarg), exit(1);
-            //printf("serial input %s -> %p\n", optarg, serial_in);
-            serial_input_available = !feof(serial_in);
+            filename = optarg;
             break;
         case 'm':
             monitor = optarg;
@@ -953,10 +947,20 @@ int main(int argc, char **argv)
         case '?':
             usage();
         }
+        
+    serial_in = fopen( filename , "r");
+
+    if (!serial_in)
+       perror( filename ), exit(1);
+
+    serial_input_available = !feof(serial_in);
+    
 
     puts("Virtual Nascom, a Nascom 2 emulator version " VERSION "\n"
          "Copyright (C) 2000,2009,2017  Tommy Thorn.\n"
          "http://github.com/tommythorn/virtual-nascom.git\n"
+         "Modifications - 2020 - Doug Rice\n"
+         "https://github.com/doug-h-rice/virtual-nascom2-dhr\n"
          "Uses software from Yet Another Z80 Emulator version "YAZEVERSION
          ", Copyright (C) 1995,1998 Frank D. Cringle.\n"
          "Virtual Nascom comes with ABSOLUTELY NO WARRANTY; for details\n"
@@ -970,15 +974,13 @@ int main(int argc, char **argv)
          "* END - leaves a screendump in `screendump`\n"
          "* F4 - exits the emulator\n"
          "* F5 - toggles between stupidly fast and \"normal\" speed\n"
-         "* F6 - rewind input file, toggle UART debug\n"
+         "* F6 - rewind serial input file, toggle UART debug\n"
          "* F9 - resets the emulated Nascom\n"
          "* F10 - toggles between \"raw\" and \"natural\" keyboard emulation\n"
          "\n"
-         "All serial output is appended to `serialout.bin` in binary which may be fed back\n"
-         "in on a subsequent launch via the `-i` option.\n"
-         "./virtual-nascom-sdl2 -i serialout.bin test.ihx \n"
+         "All serial output is appended to `serialout.bin, `\n"
+         "./virtual-nascom-sdl2 -i` old_renamed_serialout.bin test.ihx \n"
          "E1000 starts test.ihx and a lot of other examples.\n"
-                  
          );
 
 
@@ -1077,10 +1079,6 @@ void out(unsigned int port, unsigned char value)
             ui_serve_input();
             keyboard.index = 0;
         }
-#if 0
-        if (tape_led != !!(value & P0_OUT_TAPE_DRIVE_LED))
-            fprintf(stderr, "Tape LED = %d\n", !!(value & P0_OUT_TAPE_DRIVE_LED));
-#endif
         tape_led = !!(value & P0_OUT_TAPE_DRIVE_LED);
         break;
 
@@ -1179,37 +1177,12 @@ static int mysetup(int argc, char **argv)
 
 #endif
 
-#if 0 
-//
 
-    /* Populate the palette */
-    SDL_Color colors[256];
-
-    colors[0].r = colors[0].g = colors[0].b = 0;
-    colors[255].r = colors[255].b = 0;
-    colors[255].g = 255;
-
-    /* Set palette */
-    if (!SDL_SetColors(screen, colors, 0, 256)) {
-        fprintf(stderr, "Unable to create framebuffer palette: %s\n",
-                SDL_GetError());
-        screen = 0; //XXX should free it
-        return 1;
-    }
-#endif
-
-
-#ifdef SDL1
-#else
 	/* invert font - Cannot find SDL function */
-	//    for ( count =0 ; count < sizeof( nascom_font_raw ); count ++ ){
-
+	//  for ( count =0 ; count < sizeof( nascom_font_raw ); count ++ ){
     for ( count =0 ; count < 256*16 ; count ++ ){
-
 		nascom_font_raw[ count ] = ~nascom_font_raw[ count ];
 	}
-#endif
-
     /* Load font - the font is a 1 bit map and for SDL2 the masks do not work */
     nascom_font.surf =
         SDL_CreateRGBSurfaceFrom(
