@@ -1,14 +1,18 @@
 Doug Rice's changes in 2017 and 2019 and 2020 and 2022
 =======================================================
 
-## Install notes
+## Install notes 
+
+I use Raspberry Pi Desktop for PC see: https://www.raspberrypi.com/software/
+
+
 This needs SDL, see:
 
 https://www.libsdl.org/ 
 
 http://wiki.libsdl.org/Installation
 
-I downloaded zip from my git hub and extracted it. 
+I downloaded zip from my git hub and extracted it and open the folder.
 
 Then I did this:
 
