@@ -1,5 +1,35 @@
-Doug Rice's changes in 2017 and 2019 and 2020
-=============================================
+Doug Rice's changes in 2017 and 2019 and 2020 and 2022
+=======================================================
+
+## Install notes
+This needs SDL, see:
+
+https://www.libsdl.org/ 
+
+http://wiki.libsdl.org/Installation
+
+I downloaded zip from my git hub and extracted it. 
+
+Then I did this:
+
+    git clone https://github.com/libsdl-org/SDL
+    cd SDL
+    mkdir build
+    cd build
+    ../configure
+    make
+    sudo make install
+
+I could then make the virtual Nascom 2.
+
+    make
+
+usage:
+
+    ./virtual-nascom-sdl2 -i serialout.bin test.ihx
+
+## History 
+
 I first used the x11 version, but upgrades to UBUNTU broke this.
 
 I installed SDL1.2 and got this to work on the raspberry Pi
@@ -13,6 +43,8 @@ Raspbarian stretch broke this so I got it to work with SDL2
 I tried BUSTER and SDL2 and it now scales 1:2 so is easier to read.
 
 I use #define SDL1 and #ifdef SDL1 to select between SDL1.2 and SDL2
+
+## Tape recorder
 
 I added a tape recorder.
 
@@ -32,6 +64,8 @@ I got the BLS pascal to work and you can save and reload to tape.
 
 I changed serialout.txt to serialout.bin !
 
+## Usage
+
 usage:
 ./virtual-nascom-sdl2 -i serialout.bin test.ihx
 
@@ -39,7 +73,7 @@ E1000 runs test.ihx
 
 I like BLS Pascal so it tries to load it from same directory.
 
-Tommy's README.md
+## Tommy's README.md
 
 Virtual Nascom, Version 1.10, 2017-05-10
 ========================================
