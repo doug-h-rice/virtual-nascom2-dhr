@@ -1,12 +1,13 @@
 Doug Rice's changes in 2017 and 2019 and 2020 and 2022
 =======================================================
 
+Tommy Thorn also has a JavaScript version, which can be run in a web browser. https://github.com/tommythorn/jsnascom
+
 ## Install notes 
 
-I use Raspberry Pi Desktop for PC see: https://www.raspberrypi.com/software/
+This version uses Linux. Use Raspberry Pi Desktop for PC, see: https://www.raspberrypi.com/software/
 
-
-This needs SDL, see:
+This virtual-nascom needs SDL, see:
 
 https://www.libsdl.org/ 
 
@@ -24,7 +25,7 @@ Then I did this:
     make
     sudo make install
 
-I could then make the virtual Nascom 2.
+I could then make the virtual Nascom 2 using make.
 
     make
 
@@ -34,7 +35,7 @@ usage:
 
 ## History 
 
-I first used the x11 version, but upgrades to UBUNTU broke this.
+I first used tommy's  x11 version, but upgrades to UBUNTU broke this.
 
 I installed SDL1.2 and got this to work on the raspberry Pi
 
