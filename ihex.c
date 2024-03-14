@@ -50,7 +50,7 @@ static bool read_ihex_line(FILE *f, unsigned char *memory, unsigned *start_addr)
      KK checksum (twos compliment of sum of all bytes)
     */
 
-    int ch, count, addr, type, v, chk;
+    unsigned int ch, count, addr, type, v, chk;
 
     do {
         ch = fgetc(f);
